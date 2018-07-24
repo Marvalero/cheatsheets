@@ -19,7 +19,81 @@ gcloud compute instances list
 gcloud compute disks list
 ```
 
-## IAM
+**Instance Templates**
+
+```bash
+# Create instance template
+cat << EOF > startup.sh
+#! /bin/bash
+apt-get update
+apt-get install -y nginx
+service nginx start
+sed -i -- 's/nginx/Google Cloud Platform - '"\$HOSTNAME"'/' /var/www/html/index.nginx-debian.html
+EOF
+
+gcloud compute instance-templates create nginx-template --metadata-from-file startup-script=startup.sh
+
+# Create an instances in a group (we need a target pool for that)
+gcloud compute target-pools create nginx-pool
+gcloud compute instance-groups managed create nginx-group \
+         --base-instance-name nginx \
+         --size 2 \
+         --template nginx-template \
+         --target-pool nginx-pool
+
+# Create a firewall rule to reach them
+gcloud compute firewall-rules create www-firewall --allow tcp:80
+```
+
+
+## Network
+
+**Load Balancers**
+
+1 - L3 Network Load Balancer
+```bash
+# create a L3 network load balancer
+gcloud compute forwarding-rules create nginx-lb \
+         --region europe-west1 \
+         --ports=80 \
+         --target-pool nginx-pool
+
+# List all forwarding rule in the project (you should be able to connect to http://IP_ADDRESS/)
+gcloud compute forwarding-rules list
+```
+
+
+2 - L7 HTTP(s) Load Balancer
+An HTTP(S) load balancer is composed of several component:
+
+![HTTP Load Balancer, image from GCP doc](./basic-http-load-balancer.svg)
+
+```bash
+# Create a health check (to verify that the instance is responding to HTTP traffic)
+gcloud compute http-health-checks create http-basic-check
+# Define an HTTP service and map a port name to the relevant port for the instance group
+gcloud compute instance-groups managed set-named-ports nginx-group --named-ports http:80
+# Create a backend service for nginx-group and using http-basic-check
+gcloud compute backend-services create nginx-backend --protocol HTTP --http-health-checks http-basic-check --global
+gcloud compute backend-services add-backend nginx-backend \
+    --instance-group nginx-group \
+    --instance-group-zone europe-west1-c \
+    --global
+
+# Create a default URL map that directs all incoming requests to all your instances
+gcloud compute url-maps create web-map --default-service nginx-backend
+# Create a target HTTP proxy to route requests to your URL map:
+gcloud compute target-http-proxies create http-lb-proxy --url-map web-map
+# Create a global forwarding rule to handle and route incoming requests
+gcloud compute forwarding-rules create http-content-rule \
+        --global \
+        --target-http-proxy http-lb-proxy \
+        --ports 80
+# You can list forwarding rules (it may take a while to appear, you should be able to connect to http://IP_ADDRESS/.)
+gcloud compute forwarding-rules list
+```
+
+## Identity and Access Management (IAM)
 
 ```bash
 # Add role roles/container.admin to a service account
