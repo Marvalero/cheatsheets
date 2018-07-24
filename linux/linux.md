@@ -27,4 +27,25 @@ gpg --always-trust --output ${OUTPUT} ${RECIPIENT_LIST} --encrypt ${INPUT}
 ```bash
 # Reload routing table
 sudo ifconfig en0 down && sudo route flush && sudo ifconfig en0 up
+
+# See postgres connections
+sudo netstat -tupn | grep postgres | awk 'sub(/:[0-9]+/,"",$5){ print $5 }' | sort | uniq -c
+```
+
+
+## Memory
+
+```bash
+# disk usage
+sudo du -h --max-depth=1 /
+```
+
+## Packages
+
+```bash
+# Upgrade kernel distro (you need to restart the server after this)
+apt-get dist-upgrade
+
+# Remove a package
+apt-get remove PACKAGE
 ```
