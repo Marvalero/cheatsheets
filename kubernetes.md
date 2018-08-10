@@ -1,4 +1,7 @@
 # Kubernetes
+## Container Runtime Interface (CRI)
+It is the piece of Kubernetes that starts and stops containers. The default is Docker (it may be replaced by containerd).
+
 ## kubectl
 ```bash
 # Forward port

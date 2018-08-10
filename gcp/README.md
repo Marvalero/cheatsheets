@@ -1,4 +1,4 @@
-# Gcloud
+# Google Cloud
 
 ## Configuration
 
@@ -8,6 +8,16 @@ gclound init
 
 # With a service account
 gcloud auth activate-service-account SERVICE_ACCOUNT_EMAIL --key-file /path/to/file
+```
+
+## gsutil
+Tool that lets you access Cloud Storage from the command line.
+
+```bash
+# list buckets and objects inside buckets
+gsutil ls
+# download an object
+gsutil cp gs://[BUCKET_NAME]/[OBJECT_NAME] [OBJECT_DESTINATION]
 ```
 
 ## VM
