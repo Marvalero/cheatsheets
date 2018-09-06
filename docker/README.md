@@ -93,6 +93,22 @@ docker network prune
 docker network rm mynetwork
 
 ####################
+# volume
+####################
+# create a persistent volume
+docker volume create myvolume -d overlay2
+# list volumes
+docker volume ls
+# inspect volume
+docker volume inspect myvolume
+# delete all unused volumes
+docker volume prune
+# Delete a specific volume
+docker volume rm myvolume
+# mount a volume on a container
+docker container run -dit --name volcont --mount source=myvolume,target=/volu alpine
+
+####################
 # troubleshooting
 ####################
 # troubleshooting if using systemd
@@ -261,6 +277,28 @@ Docker native networking drivers are (they can be all active at the same time):
  * overlay: Multi-host network. It allows you to create a flat, secure, layer-2 network. We would need to connect the hosts as a cluster using docker swarm tho. Docker overlay networking uses VXLAN tunnels to create virtual Layer 2 overlay networks. A virtual switch called Br0 is created inside the sandbox. A VTEP is also created with one end plumbed into the Br0 switch and the other plumbed into the host network stack (VTEP). The host network gets an IP address on the underlay network the host is connected to and bound to the 4789 udp port.
 
 
+## Volumes
+
+Every container gets its own non-persistent storage. It's automatically created, alongside the container, and it is tied to the lifecycle of the container. To have persistent data, you need to use a volume. Volumes lifecycle is not attached to the container lifecycle.
+
+What happens: you create a volume, then create a container and mount the volume to it.
+
+Note: sharing the same volume between 2 containers could end up in data corruption.
+
+**Storage Drivers**
+Every Docker container gets a local storage that is managed by the storage driver. Docker for Linux support several storage drivers (configured on /etc/docker/daemon.json):
+ * aufs (original and oldest)
+ * overlay2 (most popular)
+ * devicemapper
+ * btrfs
+ * zfs
+
+Each storage driver has its own subdirectory on the host (usually under /var/lib/docker/STORAGE_DRIVER/). So if you change the storage driver, existing images and containers will not be available.
+
+there are three types of storage: block storage, file storage and Object storage.
+
+It is also called  *Snapshotter* as is responsible for stacking layers and presenting them as a single unified filesystem.
+
 ## Upgrade Docker on Ubuntu
 
 ```bash
@@ -269,15 +307,3 @@ apt-get remove docker docker-ce docker.io docker-engine -y
 wget -q0- https://get.docker/com | sh
 systemctl enable docker
 ```
-
-## Storage Drivers
-Every Docker container gets a local storage that is managed by the storage driver. Docker for Linux support several storage drivers (configured on /etc/docker/daemon.json):
- * aufs (original and oldest)
- * overlay2
- * devicemapper
- * btrfs
- * zfs
-
-Each storage driver has its own subdirectory on the host (usually under /var/lib/docker/STORAGE_DRIVER/). So if you change the storage driver, existing images and containers will not be available
-
-It is also called  *Snapshotter* as is responsible for stacking layers and presenting them as a single unified filesystem.
